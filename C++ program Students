@@ -1,0 +1,563 @@
+#include <iostream>		// для потока ввода-вывода
+#include <string>		// для строковых функций и встроенного типа данных string
+#include <iomanip>		// манипуляторы для форматированного вывода данных на консоль
+#include <Windows.h>
+#include <fstream>
+#include <regex>
+
+using namespace std;
+
+// класс "Студент"
+class CStudent
+{
+private:
+	string name; // имя студента
+	string surname; // фамилия студента
+	string patronymic; // отчество студента
+	char sex; // пол студента
+	string numberMobilePhone; // мобильный номер телефона
+	int year; // год рождения
+	bool isLiveHostel; // проживает в общежитии?
+	string group;
+public:
+	// конструктор по умолчанию
+	CStudent() {}
+	// параметрический конструктор (инициализация всех полей студента)
+	CStudent(string group, string pname, string psurname, string ppatron, char psex, string pnumberPhone, int pyear, bool phostel)
+	{
+		this->name = pname;
+		this->surname = psurname;
+		this->patronymic = ppatron;
+		this->sex = psex;
+		this->numberMobilePhone = pnumberPhone;
+		this->year = pyear;
+		this->isLiveHostel = phostel;
+		this->group = group;
+	}
+	// получение имени студента
+	string GetGroup(void)const {
+		return this->group;
+	}
+	string GetName(void) const
+	{
+		return this->name;
+	}
+	// получение фамилии студента
+	string GetSurname(void) const
+	{
+		return this->surname;
+	}
+	// получение отчества студента
+	string GetPatron(void) const
+	{
+		return this->patronymic;
+	}
+	// получение пола студента
+	char GetSex(void) const
+	{
+		return this->sex;
+	}
+	// получение мобильного телефона студента
+	string GetPhone(void) const
+	{
+		return this->numberMobilePhone;
+	}
+	// получение года рождения студента
+	int GetYear(void) const
+	{
+		return this->year;
+	}
+	// получение проживания в общежитии
+	bool GetLiveHostel(void) const
+	{
+		return this->isLiveHostel;
+	}
+};
+
+// класс "Список студентов"
+
+class CStudentGroup
+{
+private:
+	CStudent* students; // коллекция студентов переменного размера
+	int countStudents; // количество студентов
+	string group;
+public:
+	// конструктор по умолчанию
+	CStudentGroup()
+	{
+		this->students = NULL;
+		this->countStudents = 0;
+	}
+	// деструктор (удаляет динамическую память из коллекции студентов)
+	~CStudentGroup()
+	{
+		delete[]students;
+	}
+	// установка нового значения кол-ва студентов
+	void SetCountStudents(int pcount)
+	{
+		this->countStudents = pcount;
+	}
+	// получение кол-ва студентов
+	int GetCountStudents(void)
+	{
+		return this->countStudents;
+	}
+
+	// вывод на экран информации о текущем студенте
+
+	void PrintStudent(const CStudent pstudent, const int pnumber)
+	{
+
+		cout << "Студент " << pnumber << ":" << endl;
+		cout << "Группа: " << pstudent.GetGroup() << endl;
+		cout << "ФИО: " << pstudent.GetSurname() + " " + pstudent.GetName() + " " + pstudent.GetPatron() + " " << endl;
+		cout << "Пол: " << pstudent.GetSex() << endl;
+		cout << "Мобильный телефон: " << pstudent.GetPhone() << endl;
+		cout << "Год рождения: " << pstudent.GetYear() << endl;
+		cout << "Проживает в общежитии: ";
+		if (pstudent.GetLiveHostel())
+			cout << "Да" << endl;
+		else
+			cout << "Нет" << endl;
+		cout << endl;
+	}
+
+	// вывод информации о студентах на экран
+
+	void PrintStudents(void)
+	{
+		SaveGroupData("group_data.txt");
+		cout << endl << "Информация о студентах (" << this->GetCountStudents() << " чел.)" << endl;
+		for (int i = 0; i < this->GetCountStudents(); i++)
+		{
+			PrintStudent(this->students[i], i + 1);
+		}
+	}
+
+	// Сохранение данных в файл
+
+	void SaveGroupData(const string& filename)
+	{
+		ofstream file(filename);
+		if (file.is_open())
+		{
+			// Сохраняем количество студентов
+			file << countStudents << endl;
+
+			// Сохраняем информацию о каждом студенте
+			for (int i = 0; i < countStudents; i++)
+			{
+				file << students[i].GetGroup() << endl;
+				file << students[i].GetName() << endl;
+				file << students[i].GetSurname() << endl;
+				file << students[i].GetPatron() << endl;
+				file << students[i].GetSex() << endl;
+				file << students[i].GetPhone() << endl;
+				file << students[i].GetYear() << endl;
+				file << students[i].GetLiveHostel() << endl;
+			}
+
+			file.close();
+		}
+	}
+
+	// Загрузка данных из файла
+
+	void LoadGroupData(const string& filename)
+	{
+		ifstream file(filename);
+		if (file.is_open())
+		{
+			// Очищаем текущих студентов
+			delete[] students;
+			students = nullptr;
+			countStudents = 0;
+
+			// Загружаем количество студентов
+			file >> countStudents;
+			file.ignore();  // Игнорируем символ новой строки
+
+			// Выделяем память под новых студентов
+			students = new CStudent[countStudents];
+
+			// Загружаем информацию о каждом студенте
+			for (int i = 0; i < countStudents; i++)
+			{
+				string name, surname, patronymic, numberMobilePhone, group;
+				char sex;
+				int year;
+				bool isLiveHostel;
+
+				getline(file, group);
+				getline(file, name);
+				getline(file, surname);
+				getline(file, patronymic);
+				file >> sex;
+				file.ignore();  // Игнорируем символ новой строки
+				getline(file, numberMobilePhone);
+				file >> year;
+				file.ignore();  // Игнорируем символ новой строки
+				file >> isLiveHostel;
+				file.ignore();  // Игнорируем символ новой строки
+
+				students[i] = CStudent(group, name, surname, patronymic, sex, numberMobilePhone, year, isLiveHostel);
+			}
+
+			file.close();
+		}
+	}
+
+	// добавление нового студента в конец
+
+	void AddStudent(void)
+	{
+		string name; // имя студента
+		string surname; // фамилия студента
+		string patronymic; // отчество студента
+		char sex; // пол студента
+		string numberMobilePhone; // мобильный номер телефона
+		int year; // год рождения
+		bool isLiveHostel; // проживает в общежитии?
+		string group;
+
+		cout << endl << "Введите группу студента: ";
+		cin >> group;
+		cout << endl << "Введите имя студента: ";
+		cin >> name;
+		cout << "Введите фамилию студента: ";
+		cin >> surname;
+		cout << "Введите отчество студента: ";
+		cin >> patronymic;
+		bool isValidSex = false;
+		while (!isValidSex)
+		{
+			cout << "Введите пол студента (M - мужской, W - женский): ";
+			cin >> sex;
+			cin.ignore();
+
+			if (sex == 'M' || sex == 'W')
+			{
+				isValidSex = true;
+			}
+			else
+			{
+				cout << "Ошибка: неверное значение пола. Пожалуйста, введите M или W." << endl;
+			}
+		}
+		bool isValidPhone = false;
+		while (!isValidPhone)
+		{
+			cout << "Введите номер мобильного телефона студента (в формате X(XXX)XXX-XX-XX): ";
+			fflush(stdin);
+			getline(std::cin, numberMobilePhone);
+
+			// Проверка формата номера телефона с помощью регулярного выражения
+			std::regex phoneRegex("\\d\\(\\d{3}\\)\\d{3}-\\d{2}-\\d{2}");
+			if (std::regex_match(numberMobilePhone, phoneRegex))
+			{
+				isValidPhone = true;
+			}
+			else
+			{
+				cout << "Ошибка: неверный формат номера телефона. Пожалуйста, введите номер в указанном формате." << endl;
+			}
+		}
+		bool isValidYear = false;
+		while (!isValidYear)
+		{
+			cout << "Введите год рождения студента: ";
+			string yearStr;
+			cin >> yearStr;
+
+			// Проверка, что введенные символы являются цифрами
+			isValidYear = true;
+			for (char c : yearStr)
+			{
+				if (!isdigit(c))
+				{
+					isValidYear = false;
+					break;
+				}
+			}
+
+			if (isValidYear)
+			{
+				year = stoi(yearStr); // Преобразование строки в целое число
+			}
+			else
+			{
+				cout << "Ошибка: неверное значение года рождения. Пожалуйста, введите только цифры." << endl;
+			}
+		}
+		bool isValidHostel = false;
+		while (!isValidHostel)
+		{
+			cout << "Проживает ли студент в общежитии (y - ДА, n - НЕТ)?: ";
+			char tmpLive;
+			cin >> tmpLive;
+
+			if (tmpLive == 'y')
+			{
+				isLiveHostel = true;
+				isValidHostel = true;
+			}
+			else if (tmpLive == 'n')
+			{
+				isLiveHostel = false;
+				isValidHostel = true;
+			}
+			else
+			{
+				cout << "Ошибка: неверное значение. Пожалуйста, введите 'y' или 'n'." << endl;
+			}
+		}
+		CStudent add(group, name, surname, patronymic, sex, numberMobilePhone, year, isLiveHostel);
+
+		CStudent* tmpStudents = new CStudent[this->GetCountStudents() + 1];
+		for (int i = 0; i < this->GetCountStudents(); i++)
+			tmpStudents[i] = this->students[i];
+		this->SetCountStudents(this->GetCountStudents() + 1);
+		tmpStudents[this->GetCountStudents() - 1] = add;
+		delete[] this->students;
+		this->students = tmpStudents;
+	}
+
+	// удаление студента по порядковому номеру
+
+	void DeleteStudent(const int pindex)
+	{
+		int position = -1;
+		CStudent* tmpStudents = new CStudent[this->GetCountStudents() - 1];
+		for (int i = 0; i < this->GetCountStudents(); i++)
+		{
+			if (i != (pindex - 1))
+			{
+				tmpStudents[++position] = this->students[i];
+			}
+		}
+		this->SetCountStudents(this->GetCountStudents() - 1);
+		delete[] this->students;
+		this->students = tmpStudents;
+	}
+
+	// поиск студентов, у которых в номере телефона есть заданная цифра
+
+	void SearchStudentsDigitPhone(const char pdigit)
+	{
+		cout << endl << "Информация о студентах, у которых в номере телефона есть цифра '" << pdigit << "':" << endl;
+		for (int i = 0; i < this->GetCountStudents(); i++)
+		{
+			if (this->students[i].GetPhone().find(pdigit) != string::npos)
+			{
+				PrintStudent(this->students[i], i + 1);
+			}
+		}
+	}
+
+	// поиск студентов, рожденных в заданном году
+
+	void SearchStudentsByYear(const int pyear)
+	{
+		cout << endl << "Информация о студентах, рожденных в '" << pyear << "' году: " << endl;
+		for (int i = 0; i < this->GetCountStudents(); i++)
+		{
+			if (this->students[i].GetYear() == pyear)
+			{
+				PrintStudent(this->students[i], i + 1);
+			}
+		}
+	}
+
+	// сортировка студентов по фамилии (по возрастанию)
+
+	void SortStudentsBySurnameASC(void)
+	{
+		CStudent tmp;
+		for (int i = this->GetCountStudents() - 1; i >= 0; i--)
+			for (int j = 0; j < i; j++)
+				if (this->students[j].GetSurname() > this->students[j + 1].GetSurname())
+				{
+					tmp = this->students[j];
+					this->students[j] = this->students[j + 1];
+					this->students[j + 1] = tmp;
+				}
+	}
+
+	// сортировка студентов по году рождения (по убыванию)
+
+	void SortStudentsByYearDESC(void)
+	{
+		CStudent tmp;
+		for (int i = this->GetCountStudents() - 1; i >= 0; i--)
+			for (int j = 0; j < i; j++)
+				if (this->students[j].GetYear() < this->students[j + 1].GetYear())
+				{
+					tmp = this->students[j];
+					this->students[j] = this->students[j + 1];
+					this->students[j + 1] = tmp;
+				}
+	}
+};
+
+// меню программы
+
+int Menu(void)
+{
+	int select;
+	do
+	{
+		system("CLS");
+		cout << "1 - ДОБАВИТЬ СТУДЕНТА В СПИСОК (конец списка)" << endl;
+		cout << "2 - УДАЛИТЬ СТУДЕНТА ИЗ СПИСКА (по порядковому номеру)" << endl;
+		cout << "3 - ВЫВОД ИНФОРМАЦИИ ОБО ВСЕХ СТУДЕНТАХ" << endl;
+		cout << "4 - ПОИСК СТУДЕНТОВ, У КОТОРЫХ В №ТЕЛЕФОНА ЕСТЬ ЗАДАННАЯ ЦИФРА" << endl;
+		cout << "5 - ПОИСК СТУДЕНТОВ, РОЖДЕННЫХ В ЗАДАННОМ ГОДУ" << endl;
+		cout << "6 - СОРТИРОВКА СТУДЕНТОВ ПО ФАМИЛИИ (по возрастанию от А до Я)" << endl;
+		cout << "7 - СОРТИРОВКА СТУДЕНТОВ ПО ГОДУ РОЖДЕНИЯ (по убыванию от младшего к старшему)" << endl;
+		cout << "8 - ВЫХОД ИЗ ПРОГРАММЫ" << endl;
+		cout << "Выбор: ";
+		cin >> select;
+	} while ((select < 1) || (select > 8));
+	return select;
+}
+
+// главная функция программы
+
+int main(void)
+{
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+	setlocale(0, "rus");
+
+	CStudentGroup group; // 
+	group.LoadGroupData("group_data.txt");
+
+	int select;
+	do
+	{
+		select = Menu();
+		switch (select)
+		{
+		case 1:
+		{
+			group.AddStudent();
+			cout << endl << "Новый студент успешно добавлен в конец списка. Для продолжения нажмите Enter...";
+			fflush(stdin);
+			cin.ignore();
+			cin.get();
+			break;
+		}
+		case 2:
+		{
+			group.PrintStudents();
+			int number;
+			cout << endl << "Введите порядковый номер студента, которого планируете исключить из списка: ";
+			cin >> number;
+			fflush(stdin);
+			if ((number < 1) || (number > group.GetCountStudents()))
+				cout << "Студента с таким порядковым номером не существует! Удаление невозможно. Для продолжения нажмите ENTER...";
+			else
+			{
+				group.DeleteStudent(number);
+				cout << "Студент с заданным порядковым номером успешно исключен из списка. Для продолжения нажмите ENTER...";
+			}
+			cin.ignore();
+			cin.get();
+			break;
+		}
+		case 3:
+		{
+			group.PrintStudents();
+			fflush(stdin);
+			cout << endl << "Для продолжения нажмите ENTER...";
+			cin.ignore();
+			cin.get();
+			break;
+		}
+		case 4:
+		{
+			if (group.GetCountStudents() == 0)
+			{
+				fflush(stdin);
+				cout << endl << "В списке нет ни одного студента! Поиск невозможен. Для продолжения нажмите ENTER...";
+			}
+			else
+			{
+				group.PrintStudents();
+				char digit;
+				cout << endl << "Введите цифру №телефона для поиска студентов: ";
+				cin >> digit;
+				group.SearchStudentsDigitPhone(digit);
+				fflush(stdin);
+				cout << endl << "Для продолжения нажмите ENTER...";
+			}
+			cin.ignore();
+			cin.get();
+			break;
+		}
+		case 5:
+		{
+			if (group.GetCountStudents() == 0)
+			{
+				fflush(stdin);
+				cout << endl << "В списке нет ни одного студента! Поиск невозможен. Для продолжения нажмите ENTER...";
+			}
+			else
+			{
+				group.PrintStudents();
+				int year;
+				cout << endl << "Введите значение года (4-ре цифры) для поиска студентов: ";
+				cin >> year;
+				group.SearchStudentsByYear(year);
+				fflush(stdin);
+				cout << endl << "Для продолжения нажмите ENTER...";
+			}
+			cin.ignore();
+			cin.get();
+			break;
+		}
+		case 6:
+		{
+			if (group.GetCountStudents() == 0)
+			{
+				fflush(stdin);
+				cout << endl << "В списке нет ни одного студента! Сортировка данных невозможна. Для продолжения нажмите ENTER...";
+			}
+			else
+			{
+				group.SortStudentsBySurnameASC();
+				group.PrintStudents();
+				cout << endl << "Информация о студентах упорядочена по возрастанию фамилий студентов." << endl;
+				fflush(stdin);
+				cout << endl << "Для продолжения нажмите ENTER...";
+			}
+			cin.ignore();
+			cin.get();
+			break;
+		}
+		case 7:
+		{
+			if (group.GetCountStudents() == 0)
+			{
+				fflush(stdin);
+				cout << endl << "В списке нет ни одного студента! Сортировка данных невозможна. Для продолжения нажмите ENTER...";
+			}
+			else
+			{
+				group.SortStudentsByYearDESC();
+				group.PrintStudents();
+				cout << endl << "Информация о студентах упорядочена по убыванию года рождения." << endl;
+				fflush(stdin);
+				cout << endl << "Для продолжения нажмите ENTER...";
+			}
+			cin.ignore();
+			cin.get();
+			break;
+		}
+		}
+	} while (select != 8);
+
+	return 0;
+}
